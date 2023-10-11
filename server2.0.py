@@ -26,6 +26,20 @@ def listen_for_messages(client_socket,username):
                     print(f"'{username_to_remove}' exit the chat!!")
                     break
         
+        elif message == 'typing':
+            #active_clients[(username,client_socket)]['status'] = 'typing'
+            final_msg = username + '~' + message
+            send_messages_to_all(final_msg)
+        
+        elif message == 'online':
+            #active_clients[(username,client_socket)]['status'] = 'Online'
+            final_msg = username + '~' + "Online"
+            send_messages_to_all(final_msg)
+
+        elif message == 'offline':
+            final_msg = username + '~' + "offline"
+            send_messages_to_all(final_msg)
+
         elif message != '':
             final_msg = username + '~' + message
             #print("send messages to all function called")
@@ -54,7 +68,7 @@ def send_messages_to_all(message):
 def client_handler(client_socket):
     #server asking for clients username
     while 1:
-        
+
         username = client_socket.recv(128).decode('utf-8')
         print(f"'{username}' join the chat")
         notify = "| ADMIN |" + '~' f"'{username}' join the chat!!"
@@ -71,7 +85,7 @@ def client_handler(client_socket):
 
 def main():
     
-    #creating the socket class objectj
+    #creating the socket class object
     #AF_INET = IPv4 address family
     #socket_stream = tcp
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
