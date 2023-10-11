@@ -12,7 +12,7 @@ active_clients = [] # list of all connected users
 def receive_file_from_client(client_socket, username, file_name):
     try:
         # Receive file data
-        file_data = client_socket.recv(10000)
+        file_data = client_socket.recv(262144)
         with open(file_name, 'wb') as file:
             file.write(file_data)
         file_prompt = f"| FILE | ~'{username}' sent a file: {file_name}"
