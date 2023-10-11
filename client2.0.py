@@ -5,6 +5,8 @@ import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import messagebox
 from pynput import keyboard
+from tkinter import filedialog
+import os
 import time
 
 #target ip to connect
@@ -113,6 +115,7 @@ def display_help():
     Available commands:
     /help - Display this help message
     /quit - Exit the chat room
+    /sendfile to send file
     simple write anything as message 
     """
     return help_text
@@ -145,7 +148,7 @@ def listen_for_messages_from_server(client_socket):
 
     while 1:
         #print("client is listing for messages")
-        message = client_socket.recv(1024).decode("utf-8")
+        message = client_socket.recv(10000).decode("utf-8")
 
         if message != '':
             username = message.split("~")[0]
@@ -160,6 +163,13 @@ def listen_for_messages_from_server(client_socket):
             messagebox.showerror("ERROR", "message is empty!!")
 
 
+def send_file_to_server(file_path):
+    with open(file_path, 'rb') as file:
+        file_data = file.read()
+        file_name = os.path.basename(file_path)
+        client_socket.sendall(f"/sendfile {file_name}".encode())
+        client_socket.sendall(file_data)
+
 def send_message_to_the_server():
 
     message = message_textbox.get()
@@ -171,6 +181,17 @@ def send_message_to_the_server():
     elif message == '/quit':
         client_socket.sendall(message.encode())
         exit(0)
+
+    if message.startswith('/sendfile'):
+        # Ask the user to select a file using a file dialog
+        file_path = filedialog.askopenfilename()
+        if file_path:
+            if os.path.exists(file_path):
+                send_file_to_server(file_path)
+            else:
+                update_scrollbox("File not found.")
+        else:
+            update_scrollbox("File selection canceled.")
 
     elif message != '':
         client_socket.sendall(message.encode())
