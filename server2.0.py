@@ -7,13 +7,27 @@ ip = "127.0.0.1"
 port = 6789
 active_clients = [] # list of all connected users
 
+
+
+def receive_file_from_client(client_socket, username, file_name):
+    try:
+        # Receive file data
+        file_data = client_socket.recv(10000)
+        with open(file_name, 'wb') as file:
+            file.write(file_data)
+        file_prompt = f"| FILE | ~'{username}' sent a file: {file_name}"
+        send_messages_to_all(file_prompt)
+        print(f"'{username}' sent a file: {file_name}")
+    except Exception as e:
+        print(f"Error receiving file from '{username}': {str(e)}")
+
 #function to listen for upcomming messages from the client
 def listen_for_messages(client_socket,username):
     
     while 1:
 
         #print("listening for messages")
-        message = client_socket.recv(1024).decode('utf-8')
+        message = client_socket.recv(10000).decode('utf-8')
         
         if message == '/quit':
             quit_promte = "| ADMIN |" + '~' f"'{username}'" + " exit the chat!!"
@@ -26,6 +40,11 @@ def listen_for_messages(client_socket,username):
                     print(f"'{username_to_remove}' exit the chat!!")
                     break
         
+        elif message.startswith('/sendfile'):
+                # Handle file transfer
+                file_name = message.split()[1]
+                receive_file_from_client(client_socket, username, file_name)
+
         elif message == 'typing':
             #active_clients[(username,client_socket)]['status'] = 'typing'
             final_msg = username + '~' + message
