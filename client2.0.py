@@ -4,6 +4,8 @@ import threading
 import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import messagebox
+from pynput import keyboard
+import time
 
 #target ip to connect
 ip = "127.0.0.1"
@@ -21,6 +23,14 @@ BUTTON_FONT = ("Helvetica", 15)
 SMALL_FONT = ("Helvetica", 13)
 
 #tkinter functions
+def update_scrollbox_typing(message):
+    message_box.config(state=tk.NORMAL)
+    message_box.insert(tk.END, message + "\n")
+    time.sleep(0.2)
+    message_box.delete(1.0, tk.END)
+    message_box.config(state=tk.DISABLED)
+
+#update message box when typing status and online
 def update_scrollbox(message):
     message_box.config(state=tk.NORMAL)
     message_box.insert(tk.END, message + "\n")
@@ -51,9 +61,10 @@ def communicate_to_server():
         messagebox.showerror("ERROR","username is empty!!")
         exit(0)
 
-
+    threading.Thread(target=send_typing_status, args=(client_socket,)).start()
     threading.Thread(target=listen_for_messages_from_server,args=(client_socket, )).start()
     send_message_to_the_server()
+
 
 def send_message():
     send_message_to_the_server()
@@ -97,7 +108,6 @@ message_box = scrolledtext.ScrolledText(middle_frame, font=SMALL_FONT, bg=MEDIUM
 message_box.config(state=tk.DISABLED)
 message_box.pack(side=tk.TOP)
 
-
 def display_help():
     help_text = """
     Available commands:
@@ -106,6 +116,29 @@ def display_help():
     simple write anything as message 
     """
     return help_text
+
+# Function to send typing status to the server
+def send_typing_status(client_socket):
+    
+    time.sleep(0.5)
+    client_socket.send("online".encode())
+    key_count = 0
+    def on_key_press(key):
+
+        nonlocal key_count
+        key_count += 1
+        if key_count == 1:
+            client_socket.send("typing".encode())
+        if key_count >=10:
+            client_socket.send("typing".encode())
+            key_count = 0
+
+
+    def on_key_release(key):
+        pass
+
+    with keyboard.Listener(on_press=on_key_press, on_release=on_key_release) as listener:
+        listener.join()
 
 
 def listen_for_messages_from_server(client_socket):
@@ -118,6 +151,9 @@ def listen_for_messages_from_server(client_socket):
             username = message.split("~")[0]
             content = message.split("~")[1]
             #print(f"[{username}]: {content}")
+            if content == "typing":
+                update_scrollbox_typing(f"[{username}]: {content}")
+
             update_scrollbox(f"[{username}]: {content}")
 
         else:
